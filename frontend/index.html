@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Quote of the Day</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 2rem;
+      text-align: center;
+    }
+    #quote-box {
+      font-size: 1.5rem;
+      margin-top: 2rem;
+    }
+    button {
+      margin-top: 1rem;
+      padding: 0.5rem 1rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>📖 Quote of the Day</h1>
+  <div id="quote-box">Loading...</div>
+  <button onclick="loadQuote()">New Quote</button>
+
+  <script>
+    async function loadQuote() {
+      try {
+        const response = await fetch("http://localhost:8000/quote");
+        const data = await response.json();
+        document.getElementById("quote-box").textContent = data.quote;
+      } catch (err) {
+        document.getElementById("quote-box").textContent = "Error loading quote.";
+        console.error(err);
+      }
+    }
+
+    loadQuote(); // load on page load
+  </script>
+</body>
+</html>
