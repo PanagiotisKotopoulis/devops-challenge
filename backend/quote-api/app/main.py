@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.quotes import get_random_quote
 
-app = FastAPI()  # 👈 this must come before using 'app'
+app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
