@@ -7,11 +7,11 @@ trigger:
     include:
       - backend/*
       - frontend/*
+      - infra/*   # include Terraform dir
 
 pool:
-  name: Default # Agent pool name 
+  name: Default
   demands: Agent.Name -equals MyAgent
-
 
 variables:
   DOCKER_BUILDKIT: 1
@@ -22,8 +22,9 @@ stages:
       - job: Backend
         displayName: "Backend: Build & Test"
         steps:
-          - script: python --version
-            displayName: "Check Python Version"
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: '3.11'
 
           - task: Docker@2
             displayName: 'Build backend image'
@@ -48,3 +49,23 @@ stages:
               repository: pkotopoulis/quote-frontend
               Dockerfile: frontend/Dockerfile
               tags: latest
+
+  - stage: Terraform_Staging
+    displayName: "Deploy Infrastructure to Staging"
+    dependsOn: BuildAndTest
+    condition: succeeded()
+    jobs:
+      - job: terraformApply
+        displayName: "Terraform Apply"
+        pool:
+          name: Default
+          demands: Agent.Name -equals MyAgent
+        steps:
+          - checkout: self
+
+          - script: |
+              cd infra
+              terraform init
+              terraform plan
+              terraform apply -auto-approve
+            displayName: "Run Terraform"
