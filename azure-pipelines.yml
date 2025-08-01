@@ -10,8 +10,9 @@ trigger:
 
 pool:
   name: Default  # or the name of your self-hosted agent pool
-  demands:
-    - agent.name -equals MyAgent
+  demands: Agent.Name -equals MyAgent
+
+  
 variables:
   DOCKER_BUILDKIT: 1
 
