@@ -27,7 +27,7 @@
   <script>
     async function loadQuote() {
       try {
-        const response = await fetch("http://localhost:8000/quote");
+        const response = await fetch("https://backend-app--cjqnupc.wittydesert-2d99a67b.westeurope.azurecontainerapps.io/quote");
         const data = await response.json();
         document.getElementById("quote-box").textContent = data.quote;
       } catch (err) {
