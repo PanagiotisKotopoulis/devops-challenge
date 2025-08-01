@@ -1,0 +1,49 @@
+trigger:
+  branches:
+    include:
+      - master
+      - main
+  paths:
+    include:
+      - backend/*
+      - frontend/*
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  DOCKER_BUILDKIT: 1
+
+stages:
+  - stage: BuildAndTest
+    jobs:
+      - job: Backend
+        displayName: "Backend: Build & Test"
+        steps:
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: '3.11'
+
+          - task: Docker@2
+            displayName: 'Build backend image'
+            inputs:
+              command: build
+              repository: pkotopoulis/quote-backend
+              Dockerfile: backend/Dockerfile
+              tags: latest
+
+          - script: |
+              pip install -r backend/requirements.txt
+              pytest backend/tests/
+            displayName: "Run Pytest for backend"
+
+      - job: Frontend
+        displayName: "Frontend: Build"
+        steps:
+          - task: Docker@2
+            displayName: 'Build frontend image'
+            inputs:
+              command: build
+              repository: pkotopoulis/quote-frontend
+              Dockerfile: frontend/Dockerfile
+              tags: latest

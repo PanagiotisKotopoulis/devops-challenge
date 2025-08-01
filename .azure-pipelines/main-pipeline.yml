@@ -1,0 +1,45 @@
+jobs:
+  - job: BuildBackend
+    displayName: "Build & Push Backend"
+    pool:
+      vmImage: ubuntu-latest
+    steps:
+      - checkout: self
+
+      - script: |
+          docker build -t pkotopoulis/quote-backend:latest ./backend
+          echo $(DOCKER_HUB_PASSWORD) | docker login -u $(DOCKER_HUB_USERNAME) --password-stdin
+          docker push pkotopoulis/quote-backend:latest
+        env:
+          DOCKER_HUB_USERNAME: $(docker-hub-username)
+          DOCKER_HUB_PASSWORD: $(docker-hub-password)
+
+  - job: BuildFrontend
+    displayName: "Build & Push Frontend"
+    pool:
+      vmImage: ubuntu-latest
+    steps:
+      - checkout: self
+
+      - script: |
+          docker build -t pkotopoulis/quote-frontend:latest ./frontend
+          echo $(DOCKER_HUB_PASSWORD) | docker login -u $(DOCKER_HUB_USERNAME) --password-stdin
+          docker push pkotopoulis/quote-frontend:latest
+        env:
+          DOCKER_HUB_USERNAME: $(docker-hub-username)
+          DOCKER_HUB_PASSWORD: $(docker-hub-password)
+
+  - job: Test
+    displayName: "Run Tests"
+    dependsOn: [BuildBackend, BuildFrontend]
+    pool:
+      vmImage: ubuntu-latest
+    steps:
+      - checkout: self
+      - script: |
+          echo "Run tests here"
+          # For Python:
+          # cd backend && pytest
+          # For Node.js:
+          # cd frontend && npm install && npm test
+        displayName: "Execute Unit/Integration Tests"
