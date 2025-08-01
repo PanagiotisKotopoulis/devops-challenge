@@ -39,3 +39,29 @@ resource "azurerm_container_app" "backend" {
     }
   }
 }
+
+resource "azurerm_container_app" "frontend" {
+  name                         = "frontend-app"
+  resource_group_name          = azurerm_resource_group.main.name
+  container_app_environment_id = azurerm_container_app_environment.main.id
+  revision_mode                = "Single"
+
+  template {
+    container {
+      name   = "frontend"
+      image  = "pkotopoulis/quote-frontend:latest"
+      cpu    = 0.25
+      memory = "0.5Gi"
+    }
+  }
+
+  ingress {
+    external_enabled = true
+    target_port      = 80
+
+    traffic_weight {
+      percentage      = 100
+      latest_revision = true
+    }
+  }
+}
