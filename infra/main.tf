@@ -1,28 +1,29 @@
 provider "azurerm" {
   features {}
+  subscription_id = "3d605c9d-8805-4383-883a-934cfb54fc8d"
 }
 
-resource "azurerm_resource_group" "rg" {
-  name     = "devops-challenge-rg"
-  location = var.location
+resource "azurerm_resource_group" "main" {
+  name     = "devops-rg"
+  location = "westeurope"
 }
 
-resource "azurerm_container_app_environment" "env" {
-  name                = "devops-container-env"
-  location            = var.location
-  resource_group_name = azurerm_resource_group.rg.name
+resource "azurerm_container_app_environment" "main" {
+  name                = "devops-env"
+  location            = azurerm_resource_group.main.location
+  resource_group_name = azurerm_resource_group.main.name
 }
 
 resource "azurerm_container_app" "backend" {
-  name                         = "quote-api-backend"
-  container_app_environment_id = azurerm_container_app_environment.env.id
-  resource_group_name          = azurerm_resource_group.rg.name
+  name                         = "backend-app"
+  resource_group_name          = azurerm_resource_group.main.name
+  container_app_environment_id = azurerm_container_app_environment.main.id
   revision_mode                = "Single"
 
   template {
     container {
-      name   = "quote-api"
-      image  = "nginx"  # Replace later with your own Docker image
+      name   = "backend"
+      image  = "pkotopoulis/quote-backend:latest"
       cpu    = 0.5
       memory = "1.0Gi"
     }
@@ -30,12 +31,11 @@ resource "azurerm_container_app" "backend" {
 
   ingress {
     external_enabled = true
-    target_port      = 80
-    transport        = "auto"
+    target_port      = 8000
 
     traffic_weight {
-    percentage      = 100
-    latest_revision = true
+      percentage      = 100
+      latest_revision = true
+    }
   }
 }
-
