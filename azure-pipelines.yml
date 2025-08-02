@@ -7,16 +7,17 @@ trigger:
     include:
       - backend/*
       - frontend/*
+      - terraform/*
 
 pool:
-  name: Default  # Your self-hosted agent
+  name: Default  # Use your self-hosted agent pool name
 
 variables:
   DOCKER_BUILDKIT: 1
-  IMAGE_TAG: 'latest'
 
 stages:
   - stage: BuildAndTest
+    displayName: "Build & Test"
     jobs:
       - job: Backend
         displayName: "Backend: Build & Test"
@@ -31,10 +32,11 @@ stages:
               command: build
               repository: pkotopoulis/quote-backend
               Dockerfile: backend/quote-api/Dockerfile
-              tags: $(IMAGE_TAG)
+              tags: latest
 
           - script: |
               pip install -r backend/quote-api/requirements.txt
+              set PYTHONPATH=backend/quote-api
               pytest backend/quote-api/
             displayName: "Run Pytest for backend"
 
@@ -47,53 +49,62 @@ stages:
               command: build
               repository: pkotopoulis/quote-frontend
               Dockerfile: frontend/Dockerfile
-              tags: $(IMAGE_TAG)
+              tags: latest
 
   - stage: DeployStaging
     displayName: "Deploy to Staging"
     dependsOn: BuildAndTest
     jobs:
       - job: TerraformApply
-        displayName: "Terraform Apply (Staging)"
+        displayName: "Terraform Apply"
         steps:
-          - script: |
-              cd infra
-              terraform init
-              terraform apply -auto-approve
-            displayName: "Apply Terraform"
+          - checkout: self
+          - task: AzureCLI@2
+            inputs:
+              azureSubscription: 'azure-rm-terraform'
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                cd terraform
+                terraform init
+                terraform apply -auto-approve
+            displayName: "Terraform Deploy to Staging"
 
   - stage: Approval
-    displayName: "Manual Approval Gate"
+    displayName: "Manual Approval"
     dependsOn: DeployStaging
     jobs:
       - job: WaitForApproval
-        displayName: "Manual Approval"
+        displayName: "Await Manual Approval"
         pool: server
         steps:
           - task: ManualValidation@0
             inputs:
-              instructions: 'Approve to deploy to production'
+              instructions: 'Approve to proceed to production.'
               onTimeout: 'reject'
-              timeout: '1d'  # 1-day approval window
+              timeout: '1d'
 
   - stage: DeployProduction
     displayName: "Deploy to Production"
     dependsOn: Approval
     jobs:
-      - job: TerraformApplyProd
-        displayName: "Terraform Apply (Prod)"
+      - job: Deploy
+        displayName: "Production Deployment"
         steps:
-          - script: |
-              cd infra
-              terraform apply -auto-approve -var="env=production"
-            displayName: "Apply Terraform for Production"
+          - task: AzureCLI@2
+            inputs:
+              azureSubscription: 'azure-rm-terraform'
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                cd terraform
+                terraform apply -auto-approve
+            displayName: "Terraform Deploy to Production"
 
-  # Optional Rollback
-  - stage: Rollback
-    displayName: "Rollback on Failure"
-    dependsOn: DeployProduction
-    condition: failed()
-    jobs:
-      - job: Rollback
-        steps:
-          - script: echo "Rollback triggered. You can add Helm/Terraform logic here."
+        # Optional rollback stub
+        # - task: Bash@3
+        #   condition: failed()
+        #   inputs:
+        #     targetType: inline
+        #     script: |
+        #       echo "Deployment failed. Rollback logic here..."
