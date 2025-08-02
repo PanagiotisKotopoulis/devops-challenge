@@ -2,3 +2,6 @@ fastapi
 uvicorn
 pytest
 httpx
+opencensus-ext-azure
+opencensus-ext-fastapi
+opencensus-ext-requests
