@@ -7,13 +7,21 @@ import os
 
 app = FastAPI()
 
-# App Insights Logging (optional)
+# Logging configuration
 instrumentation_key = os.getenv("APPINSIGHTS_INSTRUMENTATIONKEY")
-if instrumentation_key:
-    logger = logging.getLogger(__name__)
-    logger.addHandler(AzureLogHandler(connection_string=f'InstrumentationKey={instrumentation_key}'))
+logger = logging.getLogger("app")
+logger.setLevel(logging.INFO)
 
-# CORS
+if instrumentation_key:
+    logger.addHandler(
+        AzureLogHandler(connection_string=f'InstrumentationKey={instrumentation_key}')
+    )
+    logger.info("Application Insights logger initialized.")
+else:
+    logger.addHandler(logging.StreamHandler())
+    logger.info("Logger initialized without Application Insights.")
+
+# CORS configuration
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -24,6 +32,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Routes
 @app.get("/quote")
 def quote():
+    logger.info("GET /quote called")
     return {"quote": get_random_quote()}
