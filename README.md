@@ -2,31 +2,7 @@
 
 ## ✅ Architecture Diagram
 
-```mermaid
-graph TD
-    subgraph Frontend
-        FE[Frontend App (React/HTML)]
-    end
-
-    subgraph Backend
-        BE[FastAPI Container]
-    end
-
-    subgraph Observability
-        AI[Application Insights]
-        LA[Log Analytics Workspace]
-    end
-
-    subgraph AzureInfra
-        ACA[Azure Container Apps]
-        TF[Terraform]
-    end
-
-    FE -->|HTTP Request| ACA
-    ACA -->|Routes to| BE
-    BE -->|Env Logs| AI
-    AI --> LA
-```
+![Architecture Diagram](docs/architecture.png)
 
 ---
 
