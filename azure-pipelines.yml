@@ -31,7 +31,7 @@ stages:
             inputs:
               command: build
               repository: pkotopoulis/quote-backend
-              Dockerfile: backend/Dockerfile
+              Dockerfile: backend/quote-api/Dockerfile
               tags: latest
 
           - script: |
