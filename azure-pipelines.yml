@@ -34,7 +34,8 @@ stages:
 
           - script: |
               pip install -r backend/quote-api/requirements.txt
-              pytest backend/quote-api/
+              set PYTHONPATH=backend/quote-api
+              pytest backend/quote-api/tests
             displayName: "Run Pytest for backend"
 
       - job: Frontend
