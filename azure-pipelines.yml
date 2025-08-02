@@ -2,7 +2,7 @@ trigger:
   - master
 
 pool:
-  vmImage: 'Default'
+  name: Default 
 
 variables:
   ARM_CLIENT_ID: $(servicePrincipalId)
@@ -21,10 +21,12 @@ stages:
               azureSubscription: 'azure-rm-terraform1'
               scriptType: bash
               scriptLocation: inlineScript
+              workingDirectory: $(System.DefaultWorkingDirectory)/infra
               inlineScript: |
                 terraform init
 
   - stage: TerraformPlan
+    dependsOn: TerraformInit
     jobs:
       - job: Plan
         steps:
@@ -34,10 +36,12 @@ stages:
               azureSubscription: 'azure-rm-terraform1'
               scriptType: bash
               scriptLocation: inlineScript
+              workingDirectory: $(System.DefaultWorkingDirectory)/infra
               inlineScript: |
-                terraform plan
+                terraform plan -out=tfplan
 
   - stage: TerraformApply
+    dependsOn: TerraformPlan
     condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
     jobs:
       - job: Apply
@@ -48,5 +52,6 @@ stages:
               azureSubscription: 'azure-rm-terraform1'
               scriptType: bash
               scriptLocation: inlineScript
+              workingDirectory: $(System.DefaultWorkingDirectory)/infra
               inlineScript: |
-                terraform apply -auto-approve
+                terraform apply -auto-approve tfplan
