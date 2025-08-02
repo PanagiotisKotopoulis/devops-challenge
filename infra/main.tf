@@ -7,9 +7,8 @@ provider "azurerm" {
   }
 }
 
-resource "azurerm_resource_group" "main" {
+data "azurerm_resource_group" "main" {
   name     = "devops-rg"
-  location = "westeurope"
 }
 
 resource "azurerm_container_app_environment" "main" {
