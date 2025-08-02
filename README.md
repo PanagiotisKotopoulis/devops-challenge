@@ -17,7 +17,7 @@ graph TD
         LA[Log Analytics Workspace]
     end
 
-    subgraph Azure Infra
+    subgraph AzureInfra
         ACA[Azure Container Apps]
         TF[Terraform]
     end
