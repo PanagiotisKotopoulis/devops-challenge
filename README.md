@@ -8,14 +8,14 @@
 
 ## 🛠 Tech Stack & Tooling
 
-| Layer | Tooling |
-|-------|---------|
-| Application | FastAPI, Python |
-| Frontend | HTML/CSS (static) |
-| Containerization | Docker |
-| Infra as Code | Terraform |
-| CI/CD | Azure DevOps Pipelines |
-| Monitoring | Application Insights, Log Analytics |
+| Layer            | Tooling                             |
+|------------------|-------------------------------------|
+| Application      | FastAPI, Python                     |
+| Frontend         | HTML/CSS (static)                   |
+| Containerization | Docker                              |
+| Infra as Code    | Terraform                           |
+| CI/CD            | Azure DevOps Pipelines              |
+| Monitoring       | Application Insights, Log Analytics |
 
 ---
 
@@ -29,6 +29,17 @@
    - **Deploy Production** using same Terraform infra
 3. **Rollback** supported via CLI or script.
 
+### 🧩 CI/CD Screenshots
+
+**Pipeline Stages Overview**  
+![Pipeline Stages](docs/cicd_pipeline.PNG)
+
+**Backend & Frontend Build**  
+![Build](docs/cicd_stages.PNG)
+
+**Production Deployment**  
+![Production](docs/cicd_stages1.PNG)
+
 ---
 
 ## ☁️ Infrastructure Summary (Terraform)
@@ -38,10 +49,16 @@ Terraform provisions:
 - Azure Container Apps for frontend & backend
 - Azure Log Analytics Workspace
 - Azure Application Insights Instance
-- Optional Managed Environment
 
-Located in `infra/` directory:
-- `main.tf`, `variables.tf`, etc.
+### 📦 Key Terraform Outputs (from `outputs.tf`)
+```hcl
+output "backend_url" {
+  value = azurerm_container_app.backend.latest_revision_fqdn
+}
+
+output "frontend_url" {
+  value = azurerm_container_app.frontend.latest_revision_fqdn
+}
 
 ---
 
