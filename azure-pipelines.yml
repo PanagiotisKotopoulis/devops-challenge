@@ -7,11 +7,9 @@ trigger:
     include:
       - backend/*
       - frontend/*
-      - infra/*   # include Terraform dir
 
 pool:
-  name: Default
-  demands: Agent.Name -equals MyAgent
+  name: Default  # Use your self-hosted agent pool name
 
 variables:
   DOCKER_BUILDKIT: 1
@@ -35,8 +33,8 @@ stages:
               tags: latest
 
           - script: |
-              pip install -r backend/requirements.txt
-              pytest backend/tests/
+              pip install -r backend/quote-api/requirements.txt
+              pytest backend/quote-api/
             displayName: "Run Pytest for backend"
 
       - job: Frontend
@@ -49,23 +47,3 @@ stages:
               repository: pkotopoulis/quote-frontend
               Dockerfile: frontend/Dockerfile
               tags: latest
-
-  - stage: Terraform_Staging
-    displayName: "Deploy Infrastructure to Staging"
-    dependsOn: BuildAndTest
-    condition: succeeded()
-    jobs:
-      - job: terraformApply
-        displayName: "Terraform Apply"
-        pool:
-          name: Default
-          demands: Agent.Name -equals MyAgent
-        steps:
-          - checkout: self
-
-          - script: |
-              cd infra
-              terraform init
-              terraform plan
-              terraform apply -auto-approve
-            displayName: "Run Terraform"
