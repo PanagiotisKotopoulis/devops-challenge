@@ -65,7 +65,7 @@ stages:
               scriptType: ps
               scriptLocation: inlineScript
               inlineScript: |
-                cd terraform
+                cd infra/terraform
                 terraform init
                 terraform apply -auto-approve
             displayName: "Terraform Deploy to Staging"
