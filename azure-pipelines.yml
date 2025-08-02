@@ -61,7 +61,7 @@ stages:
           - checkout: self
           - task: AzureCLI@2
             inputs:
-              azureSubscription: 'azure-rm-terraform'
+              azureSubscription: 'azure-rm-terraform1'
               scriptType: ps
               scriptLocation: inlineScript
               inlineScript: |
@@ -94,7 +94,7 @@ stages:
           - checkout: self
           - task: AzureCLI@2
             inputs:
-              azureSubscription: 'azure-rm-terraform'
+              azureSubscription: 'azure-rm-terraform1'
               scriptType: ps
               scriptLocation: inlineScript
               inlineScript: |
