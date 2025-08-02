@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from opencensus.ext.azure.log_exporter import AzureLogHandler
 from opencensus.ext.azure.trace_exporter import AzureExporter
-from opencensus.ext.fastapi.middleware import FastAPITraceMiddleware
+from opencensus.ext.fastapi.trace import FastAPITraceMiddleware
 from opencensus.trace.samplers import ProbabilitySampler
 import logging
 import os
