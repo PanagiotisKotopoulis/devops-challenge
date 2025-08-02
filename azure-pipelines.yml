@@ -112,6 +112,17 @@ stages:
         displayName: "Production Deployment"
         steps:
           - checkout: self
+
+          - task: AzureCLI@2
+            displayName: "Terraform Init"
+            inputs:
+              azureSubscription: 'azure-rm-terraform1'
+              scriptType: ps
+              scriptLocation: inlineScript
+              inlineScript: |
+                cd infra
+                terraform init
+
           - task: AzureCLI@2
             displayName: "Terraform Apply to Production"
             inputs:
