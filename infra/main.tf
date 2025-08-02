@@ -1,21 +1,26 @@
 provider "azurerm" {
-  features {}
   subscription_id = "3d605c9d-8805-4383-883a-934cfb54fc8d"
+  features {
+    resource_group {
+      prevent_deletion_if_contains_resources = false
+    }
+  }
 }
 
-data "azurerm_resource_group" "main" {
-  name = "devops-rg"
+resource "azurerm_resource_group" "main" {
+  name     = "devops-rg"
+  location = "westeurope"
 }
 
 resource "azurerm_container_app_environment" "main" {
   name                = "devops-env"
-  location            = data.azurerm_resource_group.main.location
-  resource_group_name = data.azurerm_resource_group.main.name
+  location            = azurerm_resource_group.main.location
+  resource_group_name = azurerm_resource_group.main.name
 }
 
 resource "azurerm_container_app" "backend" {
   name                         = "backend-app"
-  resource_group_name          = data.azurerm_resource_group.main.name
+  resource_group_name          = azurerm_resource_group.main.name
   container_app_environment_id = azurerm_container_app_environment.main.id
   revision_mode                = "Single"
 
@@ -41,7 +46,7 @@ resource "azurerm_container_app" "backend" {
 
 resource "azurerm_container_app" "frontend" {
   name                         = "frontend-app"
-  resource_group_name          = data.azurerm_resource_group.main.name
+  resource_group_name          = azurerm_resource_group.main.name
   container_app_environment_id = azurerm_container_app_environment.main.id
   revision_mode                = "Single"
 
