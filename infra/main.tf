@@ -1,3 +1,12 @@
+terraform {
+  backend "azurerm" {
+    resource_group_name  = "devops-rg"
+    storage_account_name = "tfstatestorepanag123"
+    container_name       = "tfstate"
+    key                  = "terraform.tfstate"
+  }
+}
+
 provider "azurerm" {
   subscription_id = "3d605c9d-8805-4383-883a-934cfb54fc8d"
   features {
