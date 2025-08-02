@@ -9,10 +9,11 @@ trigger:
       - frontend/*
 
 pool:
-  name: Default  # Use your self-hosted agent pool name
+  name: Default  # Your self-hosted agent
 
 variables:
   DOCKER_BUILDKIT: 1
+  IMAGE_TAG: 'latest'
 
 stages:
   - stage: BuildAndTest
@@ -30,12 +31,11 @@ stages:
               command: build
               repository: pkotopoulis/quote-backend
               Dockerfile: backend/quote-api/Dockerfile
-              tags: latest
+              tags: $(IMAGE_TAG)
 
           - script: |
               pip install -r backend/quote-api/requirements.txt
-              set PYTHONPATH=backend/quote-api
-              pytest backend/quote-api/tests
+              pytest backend/quote-api/
             displayName: "Run Pytest for backend"
 
       - job: Frontend
@@ -47,4 +47,53 @@ stages:
               command: build
               repository: pkotopoulis/quote-frontend
               Dockerfile: frontend/Dockerfile
-              tags: latest
+              tags: $(IMAGE_TAG)
+
+  - stage: DeployStaging
+    displayName: "Deploy to Staging"
+    dependsOn: BuildAndTest
+    jobs:
+      - job: TerraformApply
+        displayName: "Terraform Apply (Staging)"
+        steps:
+          - script: |
+              cd infra
+              terraform init
+              terraform apply -auto-approve
+            displayName: "Apply Terraform"
+
+  - stage: Approval
+    displayName: "Manual Approval Gate"
+    dependsOn: DeployStaging
+    jobs:
+      - job: WaitForApproval
+        displayName: "Manual Approval"
+        pool: server
+        steps:
+          - task: ManualValidation@0
+            inputs:
+              instructions: 'Approve to deploy to production'
+              onTimeout: 'reject'
+              timeout: '1d'  # 1-day approval window
+
+  - stage: DeployProduction
+    displayName: "Deploy to Production"
+    dependsOn: Approval
+    jobs:
+      - job: TerraformApplyProd
+        displayName: "Terraform Apply (Prod)"
+        steps:
+          - script: |
+              cd infra
+              terraform apply -auto-approve -var="env=production"
+            displayName: "Apply Terraform for Production"
+
+  # Optional Rollback
+  - stage: Rollback
+    displayName: "Rollback on Failure"
+    dependsOn: DeployProduction
+    condition: failed()
+    jobs:
+      - job: Rollback
+        steps:
+          - script: echo "Rollback triggered. You can add Helm/Terraform logic here."
