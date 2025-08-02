@@ -10,7 +10,7 @@ trigger:
       - infra/*
 
 pool:
-  name: Default  # Your self-hosted agent pool
+  name: Default  
 
 variables:
   DOCKER_BUILDKIT: 1
@@ -56,10 +56,12 @@ stages:
     dependsOn: BuildAndTest
     jobs:
       - job: TerraformApply
-        displayName: "Terraform Apply (Staging)"
+        displayName: "Terraform Apply"
         steps:
           - checkout: self
+
           - task: AzureCLI@2
+            displayName: "Terraform Init"
             inputs:
               azureSubscription: 'azure-rm-terraform1'
               scriptType: ps
@@ -67,8 +69,26 @@ stages:
               inlineScript: |
                 cd infra
                 terraform init
+
+          - task: AzureCLI@2
+            displayName: "Terraform Import Existing Resources"
+            inputs:
+              azureSubscription: 'azure-rm-terraform1'
+              scriptType: ps
+              scriptLocation: inlineScript
+              inlineScript: |
+                cd infra
+                terraform import azurerm_container_app_environment.main "/subscriptions/3d605c9d-8805-4383-883a-934cfb54fc8d/resourceGroups/devops-rg/providers/Microsoft.App/managedEnvironments/devops-env"
+
+          - task: AzureCLI@2
+            displayName: "Terraform Apply"
+            inputs:
+              azureSubscription: 'azure-rm-terraform1'
+              scriptType: ps
+              scriptLocation: inlineScript
+              inlineScript: |
+                cd infra
                 terraform apply -auto-approve
-            displayName: "Terraform Deploy to Staging"
 
   - stage: Approval
     displayName: "Manual Approval"
@@ -91,8 +111,8 @@ stages:
       - job: Deploy
         displayName: "Production Deployment"
         steps:
-          - checkout: self
           - task: AzureCLI@2
+            displayName: "Terraform Apply to Production"
             inputs:
               azureSubscription: 'azure-rm-terraform1'
               scriptType: ps
@@ -100,12 +120,3 @@ stages:
               inlineScript: |
                 cd infra
                 terraform apply -auto-approve
-            displayName: "Terraform Deploy to Production"
-
-          # Optional: add rollback on failure
-          # - task: Bash@3
-          #   condition: failed()
-          #   inputs:
-          #     targetType: inline
-          #     script: |
-          #       echo "Deployment failed. Implement rollback logic here..."
