@@ -7,10 +7,10 @@ trigger:
     include:
       - backend/*
       - frontend/*
-      - terraform/*
+      - infra/*
 
 pool:
-  name: Default  # Use your self-hosted agent pool name
+  name: Default  # Your self-hosted agent pool
 
 variables:
   DOCKER_BUILDKIT: 1
@@ -56,7 +56,7 @@ stages:
     dependsOn: BuildAndTest
     jobs:
       - job: TerraformApply
-        displayName: "Terraform Apply"
+        displayName: "Terraform Apply (Staging)"
         steps:
           - checkout: self
           - task: AzureCLI@2
@@ -91,20 +91,21 @@ stages:
       - job: Deploy
         displayName: "Production Deployment"
         steps:
+          - checkout: self
           - task: AzureCLI@2
             inputs:
               azureSubscription: 'azure-rm-terraform'
               scriptType: ps
               scriptLocation: inlineScript
               inlineScript: |
-                cd terraform
+                cd infra
                 terraform apply -auto-approve
             displayName: "Terraform Deploy to Production"
 
-        # Optional rollback stub
-        # - task: Bash@3
-        #   condition: failed()
-        #   inputs:
-        #     targetType: inline
-        #     script: |
-        #       echo "Deployment failed. Rollback logic here..."
+          # Optional: add rollback on failure
+          # - task: Bash@3
+          #   condition: failed()
+          #   inputs:
+          #     targetType: inline
+          #     script: |
+          #       echo "Deployment failed. Implement rollback logic here..."
