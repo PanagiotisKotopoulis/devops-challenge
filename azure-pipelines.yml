@@ -37,7 +37,7 @@ stages:
           - script: |
               python -m pip install --upgrade pip
               pip install -r backend/quote-api/requirements.txt
-              export PYTHONPATH=backend/quote-api
+              set PYTHONPATH=backend/quote-api
               pytest backend/quote-api/
             displayName: "Install dependencies & run backend tests"
 
