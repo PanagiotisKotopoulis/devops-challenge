@@ -1,57 +1,123 @@
 trigger:
-  - master
+  branches:
+    include:
+      - master
+      - main
+  paths:
+    include:
+      - backend/*
+      - frontend/*
+      - infra/*
 
 pool:
-  name: Default 
+  name: Default
 
 variables:
-  ARM_CLIENT_ID: $(servicePrincipalId)
-  ARM_CLIENT_SECRET: $(servicePrincipalKey)
-  ARM_SUBSCRIPTION_ID: $(subscriptionId)
-  ARM_TENANT_ID: $(tenantId)
+  DOCKER_BUILDKIT: 1
 
 stages:
-  - stage: TerraformInit
+  - stage: BuildAndTest
+    displayName: "Build & Test"
     jobs:
-      - job: Init
+      - job: Backend
+        displayName: "Backend: Build & Test"
+        steps:
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: '3.11'
+
+          - task: Docker@2
+            displayName: 'Build backend image'
+            inputs:
+              command: build
+              repository: pkotopoulis/quote-backend
+              Dockerfile: backend/quote-api/Dockerfile
+              tags: latest
+
+          - script: |
+              pip install -r backend/quote-api/requirements.txt
+              set PYTHONPATH=backend/quote-api
+              pytest backend/quote-api/
+            displayName: "Run Pytest for backend"
+
+      - job: Frontend
+        displayName: "Frontend: Build"
+        steps:
+          - task: Docker@2
+            displayName: 'Build frontend image'
+            inputs:
+              command: build
+              repository: pkotopoulis/quote-frontend
+              Dockerfile: frontend/Dockerfile
+              tags: latest
+
+  - stage: DeployStaging
+    displayName: "Deploy to Staging"
+    dependsOn: BuildAndTest
+    jobs:
+      - job: TerraformApply
+        displayName: "Terraform Plan & Apply"
         steps:
           - checkout: self
+
           - task: AzureCLI@2
+            displayName: "Terraform Init"
             inputs:
               azureSubscription: 'azure-rm-terraform1'
               scriptType: ps
               scriptLocation: inlineScript
-              workingDirectory: $(System.DefaultWorkingDirectory)/infra
               inlineScript: |
+                cd infra
                 terraform init
 
-  - stage: TerraformPlan
-    dependsOn: TerraformInit
-    jobs:
-      - job: Plan
-        steps:
-          - checkout: self
           - task: AzureCLI@2
+            displayName: "Terraform Plan"
             inputs:
               azureSubscription: 'azure-rm-terraform1'
               scriptType: ps
               scriptLocation: inlineScript
-              workingDirectory: $(System.DefaultWorkingDirectory)/infra
               inlineScript: |
-                terraform plan -out=tfplan
+                cd infra
+                terraform plan
 
-  - stage: TerraformApply
-    dependsOn: TerraformPlan
-    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/master'))
-    jobs:
-      - job: Apply
-        steps:
-          - checkout: self
           - task: AzureCLI@2
+            displayName: "Terraform Apply"
             inputs:
               azureSubscription: 'azure-rm-terraform1'
               scriptType: ps
               scriptLocation: inlineScript
-              workingDirectory: $(System.DefaultWorkingDirectory)/infra
               inlineScript: |
-                terraform apply -auto-approve tfplan
+                cd infra
+                terraform apply -auto-approve
+
+  - stage: Approval
+    displayName: "Manual Approval"
+    dependsOn: DeployStaging
+    jobs:
+      - job: WaitForApproval
+        displayName: "Await Manual Approval"
+        pool: server
+        steps:
+          - task: ManualValidation@0
+            inputs:
+              instructions: 'Approve to proceed to production.'
+              onTimeout: 'reject'
+              timeout: '1d'
+
+  - stage: DeployProduction
+    displayName: "Deploy to Production"
+    dependsOn: Approval
+    jobs:
+      - job: Deploy
+        displayName: "Production Deployment"
+        steps:
+          - checkout: self
+          - task: AzureCLI@2
+            displayName: "Terraform Apply to Production"
+            inputs:
+              azureSubscription: 'azure-rm-terraform1'
+              scriptType: ps
+              scriptLocation: inlineScript
+              inlineScript: |
+                cd infra
+                terraform apply -auto-approve
