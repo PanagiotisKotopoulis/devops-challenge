@@ -62,7 +62,7 @@ stages:
           - task: AzureCLI@2
             inputs:
               azureSubscription: 'azure-rm-terraform'
-              scriptType: bash
+              scriptType: ps
               scriptLocation: inlineScript
               inlineScript: |
                 cd terraform
@@ -94,7 +94,7 @@ stages:
           - task: AzureCLI@2
             inputs:
               azureSubscription: 'azure-rm-terraform'
-              scriptType: bash
+              scriptType: ps
               scriptLocation: inlineScript
               inlineScript: |
                 cd terraform
